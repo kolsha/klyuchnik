@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "klyuchnik"
+version = "0.1.0"
+description = "Telegram bot that welcomes chat members, pins info message and opens HTTP locks via inline buttons"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "klyuchnik" }]
+dependencies = [
+  "aiogram>=3.13,<4",
+  "aiohttp>=3.9",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "aioresponses>=0.7.6",
+  "ruff>=0.6",
+  "mypy>=1.10",
+]
+
+[project.scripts]
+klyuchnik = "klyuchnik.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/klyuchnik"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # Cyrillic strings are intentional (Russian UX)
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["klyuchnik"]
+mypy_path = "src"

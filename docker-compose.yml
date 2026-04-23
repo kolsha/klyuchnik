@@ -1,0 +1,43 @@
+services:
+  klyuchnik:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: klyuchnik:latest
+    container_name: klyuchnik
+    restart: unless-stopped
+    # environment:
+    #   BOT_TOKEN: ${BOT_TOKEN}
+    #   CHAT_ID: ${CHAT_ID}
+    #   STATE_FILE: /data/state.json
+    #   CONTENT_DIR: /app/content
+    #   MEMBERSHIP_TTL_S: ${MEMBERSHIP_TTL_S:-60}
+
+    #   LOCK_A_ID: ${LOCK_A_ID}
+    #   LOCK_A_TITLE: ${LOCK_A_TITLE}
+    #   LOCK_A_METHOD: ${LOCK_A_METHOD}
+    #   LOCK_A_URL: ${LOCK_A_URL}
+    #   LOCK_A_HEADERS: ${LOCK_A_HEADERS}
+    #   LOCK_A_JSON_BODY: ${LOCK_A_JSON_BODY}
+    #   LOCK_A_SUCCESS_STATUS: ${LOCK_A_SUCCESS_STATUS:-200}
+    #   LOCK_A_TIMEOUT_S: ${LOCK_A_TIMEOUT_S:-10}
+
+    #   LOCK_B_ID: ${LOCK_B_ID}
+    #   LOCK_B_TITLE: ${LOCK_B_TITLE}
+    #   LOCK_B_METHOD: ${LOCK_B_METHOD}
+    #   LOCK_B_URL: ${LOCK_B_URL}
+    #   LOCK_B_HEADERS: ${LOCK_B_HEADERS}
+    #   LOCK_B_SUCCESS_STATUS: ${LOCK_B_SUCCESS_STATUS:-200}
+    #   LOCK_B_TIMEOUT_S: ${LOCK_B_TIMEOUT_S:-10}
+    volumes:
+      - klyuchnik-state:/data
+      - ./content:/app/content:ro
+    networks:
+      - coolify
+
+volumes:
+  klyuchnik-state:
+
+networks:
+  coolify:
+    external: true
