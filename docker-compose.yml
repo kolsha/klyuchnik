@@ -31,7 +31,6 @@ services:
     #   LOCK_B_TIMEOUT_S: ${LOCK_B_TIMEOUT_S:-10}
     volumes:
       - klyuchnik-state:/data
-      - ./content:/app/content:ro
     networks:
       - coolify
 
