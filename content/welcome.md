@@ -4,7 +4,7 @@
 
 **Локация:**
 
-`Willem Parelstraat 262` ([maps](https://maps.app.goo.gl/JCbuZXwn6RitiNCn6)), 4\-й этаж
+`Willem Parelstraat 262` \([maps](https://maps.app.goo.gl/JCbuZXwn6RitiNCn6)\), 4\-й этаж
 
 **Wi\-Fi:**
 Название сети: _Odido\-2E9E46\_guest1_  
@@ -27,4 +27,4 @@
 \- Must see\: [Mezrab\: storytelling club](https://maps.app.goo.gl/Aa1gPFeUKWmRfspx5)
 \- [Хороший тайский массаж](https://maps.app.goo.gl/rHv5zHY6k8cLun6h9)
 \- [Восточноевропейские продукты](https://maps.app.goo.gl/pYdUXyqBzembQrZj9)
-\-
+
