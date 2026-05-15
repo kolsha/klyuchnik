@@ -86,3 +86,25 @@ async def test_daily_rate_limiter_ignores_corrupt_file(tmp_path: Path) -> None:
     )
 
     assert (await limiter.check(lock_id="b", user_id=1)).allowed is True
+
+
+async def test_daily_rate_limiter_excludes_configured_users(tmp_path: Path) -> None:
+    path = tmp_path / "limits.json"
+    path.write_text(
+        json.dumps({"b": {"42": {"2026-05-15": 10}, "7": {"2026-05-15": 1}}}),
+        encoding="utf-8",
+    )
+    limiter = JsonDailyRateLimiter(
+        path=path,
+        limits={"b": 1},
+        excluded_user_ids={42},
+        today=lambda: date(2026, 5, 15),
+    )
+
+    decision = await limiter.check(lock_id="b", user_id=42)
+    await limiter.record_success(lock_id="b", user_id=42)
+
+    assert decision.allowed is True
+    assert decision.limit is None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data == {"b": {"7": {"2026-05-15": 1}}}

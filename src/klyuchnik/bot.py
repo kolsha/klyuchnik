@@ -46,6 +46,7 @@ def build_bot_and_dispatcher(settings: Settings) -> tuple[Bot, Dispatcher]:
     rate_limiter = JsonDailyRateLimiter(
         path=settings.app.rate_limit_file,
         limits={settings.lock_b.id: settings.lock_b.rate_limit_daily_open_limit},
+        excluded_user_ids=settings.app.rate_limit_excluded_user_ids,
         retention_days=settings.app.rate_limit_retention_days,
     )
     notifier = TelegramLockNotifier(bot, chat_id=settings.app.chat_id)

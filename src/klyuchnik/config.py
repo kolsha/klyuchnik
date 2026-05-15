@@ -95,7 +95,20 @@ class AppSettings(BaseSettings):
     membership_ttl_s: float = 60.0
     content_dir: Path = Path("./content")
     rate_limit_file: Path = Path("./lock_rate_limits.json")
-    rate_limit_retention_days: int = 31
+    rate_limit_retention_days: int = 7
+    rate_limit_excluded_user_ids: set[int] = Field(default_factory=set)
+
+    @field_validator("rate_limit_excluded_user_ids", mode="before")
+    @classmethod
+    def _parse_rate_limit_excluded_user_ids(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            raw = v.strip()
+            if not raw:
+                return set()
+            if raw.startswith("["):
+                return set(json.loads(raw))
+            return {int(part.strip()) for part in raw.split(",") if part.strip()}
+        return v
 
 
 class Settings:

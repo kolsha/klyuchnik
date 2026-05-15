@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -44,16 +44,22 @@ class JsonDailyRateLimiter:
         path: Path,
         limits: Mapping[str, int],
         *,
+        excluded_user_ids: Iterable[int] = (),
         retention_days: int = 31,
         today: Callable[[], date] = date.today,
     ) -> None:
         self._path = path
         self._limits = {lock_id: limit for lock_id, limit in limits.items() if limit > 0}
+        self._excluded_user_ids = {int(user_id) for user_id in excluded_user_ids}
         self._retention_days = retention_days
         self._today = today
         self._lock = asyncio.Lock()
 
     async def check(self, *, lock_id: str, user_id: int) -> RateLimitDecision:
+        if self._is_excluded_user_key(user_id):
+            await self._prune_storage()
+            return RateLimitDecision(allowed=True)
+
         limit = self._limits.get(lock_id)
         if limit is None:
             return RateLimitDecision(allowed=True)
@@ -73,7 +79,7 @@ class JsonDailyRateLimiter:
         )
 
     async def record_success(self, *, lock_id: str, user_id: int) -> None:
-        if lock_id not in self._limits:
+        if lock_id not in self._limits or self._is_excluded_user_key(user_id):
             return
 
         async with self._lock:
@@ -98,6 +104,10 @@ class JsonDailyRateLimiter:
         except (OSError, ValueError, TypeError) as exc:
             _log.warning("Rate limit file %s unreadable (%s) - treating as empty", self._path, exc)
             return {}
+
+    async def _prune_storage(self) -> None:
+        async with self._lock:
+            self._write(self._prune(self._read()))
 
     def _normalize(self, data: object) -> _StoredLimits:
         if not isinstance(data, dict):
@@ -138,6 +148,8 @@ class JsonDailyRateLimiter:
         for lock_id, users in data.items():
             pruned_users: dict[str, dict[str, int]] = {}
             for user_id, dates in users.items():
+                if self._is_excluded_user_key(user_id):
+                    continue
                 kept_dates: dict[str, int] = {}
                 for day, count in dates.items():
                     parsed_day = self._parse_day(day)
@@ -155,3 +167,9 @@ class JsonDailyRateLimiter:
             return date.fromisoformat(value)
         except ValueError:
             return None
+
+    def _is_excluded_user_key(self, value: str) -> bool:
+        try:
+            return int(value) in self._excluded_user_ids
+        except ValueError:
+            return False
