@@ -101,6 +101,8 @@ class AppSettings(BaseSettings):
     @field_validator("rate_limit_excluded_user_ids", mode="before")
     @classmethod
     def _parse_rate_limit_excluded_user_ids(cls, v: Any) -> Any:
+        if isinstance(v, int):
+            return {v}
         if isinstance(v, str):
             raw = v.strip()
             if not raw:
