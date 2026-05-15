@@ -12,13 +12,15 @@ Telegram-бот (aiogram 3.x), который:
 
 ```
 Lock (Protocol)
-  └─ HttpLock     ← один класс, два инстанса из конфига (разные url/headers/body/method)
+  ├─ HttpLock      ← универсальный HTTP-замок
+  └─ SwitchbotLock ← замок B через SwitchBot HTTP proxy
 LockRegistry      ← id → Lock
 PinStateStore     ← JSON-файл, прячется за Protocol
 MembershipChecker ← TTL-кэш поверх bot.get_chat_member
+RateLimiter       ← per-lock/per-user daily limit для успешных открытий
 handlers/
   welcome         ← /start + new_chat_members → send + unpin + pin + save
-  callbacks       ← callback_query → membership → lock.open → answer
+  callbacks       ← callback_query → membership → rate-limit → lock.open → answer
 ```
 
 Каждый модуль покрыт unit-тестами (TDD: сначала тест, затем код).
@@ -69,6 +71,7 @@ mypy          # типы (strict)
 
 1. Добавьте ещё один префикс (`LOCK_C_*`) в `.env`, класс `LockCSettings` в `config.py`, и инстанс `HttpLock(settings.lock_c.to_http_config())` в `bot.build_bot_and_dispatcher`.
 2. Если замок не HTTP — реализуйте класс, удовлетворяющий `Lock` Protocol в `locks/base.py` (async `open() -> LockResult`). `LockRegistry` и `handlers/callbacks.py` не меняются.
+3. Если нужен дневной лимит, добавьте `lock_id` и лимит в `JsonDailyRateLimiter`; сам класс замка менять не нужно.
 
 ## Замечания по безопасности
 

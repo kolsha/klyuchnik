@@ -6,7 +6,13 @@ from typing import Any
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import (
+    InputMediaAudio,
+    InputMediaDocument,
+    InputMediaPhoto,
+    InputMediaVideo,
+    Message,
+)
 
 from klyuchnik.content import WelcomeContent
 from klyuchnik.keyboards import build_locks_keyboard
@@ -30,7 +36,10 @@ async def send_welcome_message(
     fails we still try to keep the state file consistent with what's in chat.
     """
     if content.photo_paths:
-        await bot.send_media_group(chat_id=chat_id, media=content.as_media_group())
+        media: list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo] = (
+            list(content.as_media_group())
+        )
+        await bot.send_media_group(chat_id=chat_id, media=media)
 
     text = "Выберите замок:" if (content.caption_fits and content.photo_paths) else content.text
     keyboard = build_locks_keyboard(registry)

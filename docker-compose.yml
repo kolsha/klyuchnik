@@ -12,6 +12,8 @@ services:
     #   STATE_FILE: /data/state.json
     #   CONTENT_DIR: /app/content
     #   MEMBERSHIP_TTL_S: ${MEMBERSHIP_TTL_S:-60}
+    #   RATE_LIMIT_FILE: /data/lock_rate_limits.json
+    #   RATE_LIMIT_RETENTION_DAYS: ${RATE_LIMIT_RETENTION_DAYS:-31}
 
     #   LOCK_A_ID: ${LOCK_A_ID}
     #   LOCK_A_TITLE: ${LOCK_A_TITLE}
@@ -24,11 +26,9 @@ services:
 
     #   LOCK_B_ID: ${LOCK_B_ID}
     #   LOCK_B_TITLE: ${LOCK_B_TITLE}
-    #   LOCK_B_METHOD: ${LOCK_B_METHOD}
-    #   LOCK_B_URL: ${LOCK_B_URL}
-    #   LOCK_B_HEADERS: ${LOCK_B_HEADERS}
-    #   LOCK_B_SUCCESS_STATUS: ${LOCK_B_SUCCESS_STATUS:-200}
+    #   LOCK_B_BASE_URL: ${LOCK_B_BASE_URL}
     #   LOCK_B_TIMEOUT_S: ${LOCK_B_TIMEOUT_S:-10}
+    #   LOCK_B_RATE_LIMIT_DAILY_OPEN_LIMIT: ${LOCK_B_RATE_LIMIT_DAILY_OPEN_LIMIT:-10}
     volumes:
       - klyuchnik-state:/data
     networks:

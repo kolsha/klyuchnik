@@ -50,6 +50,107 @@ async def test_member_opens_lock_successfully() -> None:
     assert text is not None
 
 
+async def test_successful_open_records_rate_limit_success() -> None:
+    lock = _StubLock("b", "B")
+    registry = LockRegistry([lock])
+    membership = SimpleNamespace(is_member=AsyncMock(return_value=True))
+    rate_limiter = SimpleNamespace(
+        check=AsyncMock(return_value=SimpleNamespace(allowed=True)),
+        record_success=AsyncMock(),
+    )
+    cb = _callback("b", user_id=42)
+
+    await handle_lock_open(
+        callback=cb,
+        lock_id="b",
+        registry=registry,
+        membership=membership,
+        rate_limiter=rate_limiter,
+    )
+
+    rate_limiter.check.assert_awaited_once_with(lock_id="b", user_id=42)
+    rate_limiter.record_success.assert_awaited_once_with(lock_id="b", user_id=42)
+
+
+async def test_failed_open_does_not_record_rate_limit_success() -> None:
+    lock = _StubLock("b", "B", result=LockResult(False, "HTTP 500"))
+    registry = LockRegistry([lock])
+    membership = SimpleNamespace(is_member=AsyncMock(return_value=True))
+    rate_limiter = SimpleNamespace(
+        check=AsyncMock(return_value=SimpleNamespace(allowed=True)),
+        record_success=AsyncMock(),
+    )
+    cb = _callback("b")
+
+    await handle_lock_open(
+        callback=cb,
+        lock_id="b",
+        registry=registry,
+        membership=membership,
+        rate_limiter=rate_limiter,
+    )
+
+    rate_limiter.record_success.assert_not_awaited()
+
+
+async def test_rate_limit_exceeded_does_not_trigger_lock_and_notifies_chat() -> None:
+    lock = _StubLock("b", "B")
+    registry = LockRegistry([lock])
+    membership = SimpleNamespace(is_member=AsyncMock(return_value=True))
+    rate_limiter = SimpleNamespace(
+        check=AsyncMock(return_value=SimpleNamespace(allowed=False)),
+        record_success=AsyncMock(),
+    )
+    notifier = SimpleNamespace(
+        notify_rate_limit_exceeded=AsyncMock(),
+        notify_low_battery=AsyncMock(),
+    )
+    cb = _callback("b", user_id=42)
+
+    await handle_lock_open(
+        callback=cb,
+        lock_id="b",
+        registry=registry,
+        membership=membership,
+        rate_limiter=rate_limiter,
+        notifier=notifier,
+    )
+
+    assert lock.opened == 0
+    rate_limiter.record_success.assert_not_awaited()
+    notifier.notify_rate_limit_exceeded.assert_awaited_once_with(lock=lock, user_id=42)
+    cb.answer.assert_awaited_once()
+    assert cb.answer.call_args.kwargs.get("show_alert") is True
+
+
+async def test_low_battery_success_notifies_chat() -> None:
+    lock = _StubLock(
+        "b",
+        "B",
+        result=LockResult(True, "unlocking", battery_percent=20, is_low_battery=True),
+    )
+    registry = LockRegistry([lock])
+    membership = SimpleNamespace(is_member=AsyncMock(return_value=True))
+    notifier = SimpleNamespace(
+        notify_rate_limit_exceeded=AsyncMock(),
+        notify_low_battery=AsyncMock(),
+    )
+    cb = _callback("b")
+
+    await handle_lock_open(
+        callback=cb,
+        lock_id="b",
+        registry=registry,
+        membership=membership,
+        notifier=notifier,
+    )
+
+    notifier.notify_low_battery.assert_awaited_once_with(
+        lock=lock,
+        battery_percent=20,
+    )
+
+
 async def test_non_member_does_not_trigger_lock() -> None:
     lock = _StubLock("a", "A")
     registry = LockRegistry([lock])

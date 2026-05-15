@@ -9,6 +9,8 @@ from aiogram.types import CallbackQuery
 from klyuchnik.keyboards import LockCallback
 from klyuchnik.locks.registry import LockRegistry
 from klyuchnik.membership import MembershipChecker
+from klyuchnik.notifications import LockNotifier, NullLockNotifier
+from klyuchnik.rate_limit import NullRateLimiter, RateLimiter
 
 _log = logging.getLogger(__name__)
 
@@ -19,6 +21,8 @@ async def handle_lock_open(
     lock_id: str,
     registry: LockRegistry,
     membership: MembershipChecker | Any,
+    rate_limiter: RateLimiter | Any | None = None,
+    notifier: LockNotifier | Any | None = None,
 ) -> None:
     """Membership-gated dispatcher: verify → open → user-facing alert."""
     lock = registry.get(lock_id)
@@ -35,8 +39,26 @@ async def handle_lock_open(
         )
         return
 
+    limiter = rate_limiter or NullRateLimiter()
+    lock_notifier = notifier or NullLockNotifier()
+    decision = await limiter.check(lock_id=lock.id, user_id=user_id)
+    if not decision.allowed:
+        _log.info("User %s exceeded rate limit for lock %s", user_id, lock.id)
+        await lock_notifier.notify_rate_limit_exceeded(lock=lock, user_id=user_id)
+        await callback.answer(
+            text="Лимит открытий на сегодня исчерпан",
+            show_alert=True,
+        )
+        return
+
     result = await lock.open()
     if result.ok:
+        await limiter.record_success(lock_id=lock.id, user_id=user_id)
+        if result.is_low_battery:
+            await lock_notifier.notify_low_battery(
+                lock=lock,
+                battery_percent=result.battery_percent,
+            )
         _log.info("Lock %s opened by user %s (%s)", lock.id, user_id, result.detail)
         await callback.answer(text=f"«{lock.title}» — открыто ✓")
     else:
@@ -49,6 +71,8 @@ async def handle_lock_open(
 def build_callback_router(
     registry: LockRegistry,
     membership: MembershipChecker,
+    rate_limiter: RateLimiter | None = None,
+    notifier: LockNotifier | None = None,
 ) -> Router:
     router = Router(name="locks")
 
@@ -62,6 +86,8 @@ def build_callback_router(
             lock_id=callback_data.lock_id,
             registry=registry,
             membership=membership,
+            rate_limiter=rate_limiter,
+            notifier=notifier,
         )
 
     return router

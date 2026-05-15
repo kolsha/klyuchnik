@@ -8,13 +8,18 @@ class LockResult(NamedTuple):
 
     ok: bool
     detail: str
+    battery_percent: int | None = None
+    is_low_battery: bool = False
 
 
 @runtime_checkable
 class Lock(Protocol):
     """Common interface for every lock regardless of transport (HTTP, MQTT, GPIO, ...)."""
 
-    id: str
-    title: str
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def title(self) -> str: ...
 
     async def open(self) -> LockResult: ...

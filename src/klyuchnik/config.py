@@ -8,6 +8,7 @@ from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from klyuchnik.locks.http_lock import HttpLockConfig
+from klyuchnik.locks.switchbot import SwitchbotLockConfig
 
 
 class _LockSettingsBase(BaseSettings):
@@ -63,6 +64,26 @@ class LockBSettings(_LockSettingsBase):
     )
 
 
+class SwitchbotLockSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="LOCK_B_", env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+
+    id: str
+    title: str
+    base_url: str
+    timeout_s: float = 10.0
+    rate_limit_daily_open_limit: int = 10
+
+    def to_switchbot_config(self) -> SwitchbotLockConfig:
+        return SwitchbotLockConfig(
+            id=self.id,
+            title=self.title,
+            base_url=self.base_url,
+            timeout_s=self.timeout_s,
+        )
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
@@ -73,6 +94,8 @@ class AppSettings(BaseSettings):
     state_file: Path = Path("./state.json")
     membership_ttl_s: float = 60.0
     content_dir: Path = Path("./content")
+    rate_limit_file: Path = Path("./lock_rate_limits.json")
+    rate_limit_retention_days: int = 31
 
 
 class Settings:
@@ -82,8 +105,8 @@ class Settings:
         self,
         app: AppSettings | None = None,
         lock_a: _LockSettingsBase | None = None,
-        lock_b: _LockSettingsBase | None = None,
+        lock_b: SwitchbotLockSettings | None = None,
     ) -> None:
         self.app = app or AppSettings()  # type: ignore[call-arg]
         self.lock_a = lock_a or LockASettings()  # type: ignore[call-arg]
-        self.lock_b = lock_b or LockBSettings()  # type: ignore[call-arg]
+        self.lock_b = lock_b or SwitchbotLockSettings()  # type: ignore[call-arg]
