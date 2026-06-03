@@ -49,7 +49,11 @@ def build_bot_and_dispatcher(settings: Settings) -> tuple[Bot, Dispatcher]:
         excluded_user_ids=settings.app.rate_limit_excluded_user_ids,
         retention_days=settings.app.rate_limit_retention_days,
     )
-    notifier = TelegramLockNotifier(bot, chat_id=settings.app.chat_id)
+    notifier = TelegramLockNotifier(
+        bot,
+        chat_id=settings.app.chat_id,
+        audit_chat_id=settings.app.audit_log_chat_id,
+    )
 
     dp = Dispatcher()
     dp.include_router(

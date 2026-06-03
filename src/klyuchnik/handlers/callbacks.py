@@ -59,6 +59,11 @@ async def handle_lock_open(
                 lock=lock,
                 battery_percent=result.battery_percent,
             )
+        user = callback.from_user
+        full_name = getattr(user, "full_name", None) or str(user_id)
+        username = getattr(user, "username", None)
+        user_name = f"{full_name} (@{username})" if username else full_name
+        await lock_notifier.notify_lock_opened(lock=lock, user_id=user_id, user_name=user_name)
         _log.info("Lock %s opened by user %s (%s)", lock.id, user_id, result.detail)
         await callback.answer(text=f"«{lock.title}» — открыто ✓")
     else:

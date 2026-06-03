@@ -91,6 +91,7 @@ class AppSettings(BaseSettings):
 
     bot_token: SecretStr
     chat_id: int
+    audit_log_chat_id: int | None = None
     state_file: Path = Path("./state.json")
     membership_ttl_s: float = 60.0
     content_dir: Path = Path("./content")

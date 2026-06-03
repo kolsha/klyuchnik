@@ -104,6 +104,7 @@ async def test_rate_limit_exceeded_does_not_trigger_lock_and_notifies_chat() -> 
     notifier = SimpleNamespace(
         notify_rate_limit_exceeded=AsyncMock(),
         notify_low_battery=AsyncMock(),
+        notify_lock_opened=AsyncMock(),
     )
     cb = _callback("b", user_id=42)
 
@@ -134,6 +135,7 @@ async def test_low_battery_success_notifies_chat() -> None:
     notifier = SimpleNamespace(
         notify_rate_limit_exceeded=AsyncMock(),
         notify_low_battery=AsyncMock(),
+        notify_lock_opened=AsyncMock(),
     )
     cb = _callback("b")
 
